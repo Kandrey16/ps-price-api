@@ -1,0 +1,248 @@
+model Game {
+  id            String        @id @default(uuid())
+  psnId         String        @unique
+  slug          String?
+  title         String
+  fullUrl       String?       @unique
+  rating        Int?
+  genre         String?
+  publisher     String?
+  isFreeToPlay  Boolean?      @default(false)
+  releaseDate   DateTime?
+  releaseStatus ReleaseStatus @default(RELEASED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  GameLanguageSupport GameLanguageSupport[]
+  GameImage           GameImage[]
+  PsPlus              PsPlus[]
+  GameEdition         GameEdition[]
+
+  GameVersion GameVersion[]
+
+  GameRegion GameRegion[]
+
+  @@map("games")
+}
+
+enum ReleaseStatus {
+  RELEASED
+  PREORDER
+  COMING_SOON
+}
+
+enum Platform {
+  PS4
+  PS5
+  PS4_PS5
+  VR
+  VR2
+}
+
+enum ImageType {
+  SCREENSHOT
+  MAIN
+  BACKGROUND
+  COVER
+  ARTBOOK
+  ICON
+  TRAILER
+}
+
+enum LanguageType {
+  INTERFACE
+  VOICE
+  SUBTITLE
+}
+
+enum PsPlusType {
+  ESSENTIAL
+  EXTRA
+  PREMIUM
+}
+
+model Language {
+  id   Int    @id @default(autoincrement())
+  code String @unique @db.VarChar(10) // Ограничим длину
+  name String @db.VarChar(100)
+
+  GameLanguageSupport GameLanguageSupport[]
+
+  @@map("languages")
+}
+
+model GameLanguageSupport {
+  id           Int          @id @default(autoincrement())
+  gameId       String
+  languageId   Int
+  languageType LanguageType
+  game         Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  language     Language     @relation(fields: [languageId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([gameId, languageId, languageType])
+  @@index([gameId])
+  @@map("game_language_support")
+}
+
+model GameImage {
+  id     Int       @id @default(autoincrement())
+  url    String?   @db.Text
+  type   ImageType @default(SCREENSHOT)
+  gameId String
+  game   Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+  @@map("game_images")
+}
+
+model PsPlus {
+  id     String     @id @default(uuid())
+  gameId String
+  type   PsPlusType @default(ESSENTIAL)
+  game   Game       @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@index([gameId])
+  @@map("ps_plus_offers")
+}
+
+model GameEdition {
+  id     Int    @id @default(autoincrement())
+  name   String
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  GameVersion GameVersion[]
+
+  @@index([gameId])
+  @@map("game_edition")
+}
+
+model Region {
+  id       Int    @id @default(autoincrement())
+  code     String
+  name     String
+  currency String
+
+  GameRegion GameRegion[]
+
+  @@map("regions")
+}
+
+model GameVersion {
+  SKU       String      @id @default(uuid())
+  gameId    String
+  editionId Int
+  platform  Platform    @default(PS5)
+  game      Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  edition   GameEdition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  GameVersionRegion GameVersionRegion[]
+
+  @@unique([gameId, editionId, platform])
+  @@index([gameId])
+  @@map("game_versions")
+}
+
+model GameRegion {
+  id       Int    @id @default(autoincrement())
+  regionId Int
+  gameId   String
+  game     Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  region   Region @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versionRegions GameVersionRegion[]
+
+  @@unique([regionId, gameId]) // Уникальность сохраняем
+  @@index([gameId])
+  @@index([regionId])
+  @@map("game_regions")
+}
+
+model GameVersionRegion {
+  id           Int       @id @default(autoincrement())
+  SKU          String
+  gameRegionId Int
+  storeUrl     String?
+  isAvailable  Boolean   @default(true)
+  lastChecked  DateTime?
+
+  gameVersion GameVersion @relation(fields: [SKU], references: [SKU], onDelete: Cascade)
+  gameRegion  GameRegion  @relation(fields: [gameRegionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Price        Price[]
+  PriceHistory PriceHistory[]
+
+  @@unique([SKU, gameRegionId])
+  @@index([SKU])
+  @@index([gameRegionId])
+  @@map("game_version_regions")
+}
+
+enum PriceType {
+  BASE
+  DISCOUNT
+  PS_PLUS
+}
+
+model Price {
+  id                  Int       @id @default(autoincrement())
+  gameVersionRegionId Int
+  price               Decimal   @db.Decimal(10, 2)
+  originalPrice       Decimal?  @db.Decimal(10, 2)
+  currency            String    @db.VarChar(3)
+  type                PriceType @default(BASE)
+  hasDiscount         Boolean   @default(false)
+  discountPercent     Int?      @default(0)
+  discountStart       DateTime?
+  discountFinish      DateTime?
+  recordedAt          DateTime  @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  gameVersionRegion GameVersionRegion @relation(fields: [gameVersionRegionId], references: [id], onDelete: Cascade)
+
+  @@index([gameVersionRegionId])
+  @@index([recordedAt])
+  @@map("prices")
+}
+
+model PriceHistory {
+  id                  Int       @id @default(autoincrement())
+  gameVersionRegionId Int
+  price               Decimal   @db.Decimal(10, 2)
+  originalPrice       Decimal?  @db.Decimal(10, 2)
+  currency            String    @db.VarChar(3)
+  type                PriceType
+  recordedAt          DateTime  @default(now())
+
+  gameVersionRegion GameVersionRegion @relation(fields: [gameVersionRegionId], references: [id])
+
+  @@index([gameVersionRegionId, recordedAt])
+  @@map("price_history")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
+  output          = "../generated/prisma"
+  moduleFormat    = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

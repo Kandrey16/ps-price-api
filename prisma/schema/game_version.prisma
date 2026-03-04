@@ -1,0 +1,105 @@
+model GameEdition {
+  id     Int    @id @default(autoincrement())
+  name   String @default("Standard")
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  GameVersion GameVersion[]
+
+  @@unique([name, gameId])
+  @@index([gameId])
+  @@map("game_edition")
+}
+
+model Region {
+  id       Int    @id @default(autoincrement())
+  code     String @unique
+  name     String
+  currency String
+
+  @@map("regions")
+  GameVersionRegion GameVersionRegion[]
+}
+
+model GameVersion {
+  SKU       String   @id @default(uuid())
+  editionId Int
+  platform  Platform @default(PS5)
+
+  edition GameEdition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  GameVersionRegion GameVersionRegion[]
+
+  @@unique([editionId, platform])
+  @@map("game_versions")
+}
+
+model GameVersionRegion {
+  id           Int       @id @default(autoincrement())
+  SKU          String
+  regionId Int
+  storeUrl     String?
+  isAvailable  Boolean   @default(true)
+  lastChecked  DateTime?
+
+  gameVersion GameVersion @relation(fields: [SKU], references: [SKU], onDelete: Cascade)
+  region  Region  @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Price        Price[]
+  PriceHistory PriceHistory[]
+
+  @@unique([SKU, regionId])
+  @@index([SKU])
+  @@index([regionId])
+  @@map("game_version_regions")
+}
+
+enum PriceType {
+  BASE
+  DISCOUNT
+  PS_PLUS
+}
+
+model Price {
+  id                  Int       @id @default(autoincrement())
+  gameVersionRegionId Int       @unique
+  price               Decimal   @db.Decimal(10, 2)
+  originalPrice       Decimal?  @db.Decimal(10, 2)
+  psPlusPrice         Decimal?  @db.Decimal(10, 2)
+  currency            String    @db.VarChar(3)
+  type                PriceType @default(BASE)
+  hasDiscount         Boolean   @default(false)
+  discountPercent     Int?      @default(0)
+  discountStart       DateTime?
+  discountFinish      DateTime?
+  recordedAt          DateTime  @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  gameVersionRegion GameVersionRegion @relation(fields: [gameVersionRegionId], references: [id], onDelete: Cascade)
+
+  @@index([recordedAt])
+  @@map("prices")
+}
+
+model PriceHistory {
+  id                  Int       @id @default(autoincrement())
+  gameVersionRegionId Int
+  price               Decimal   @db.Decimal(10, 2)
+  originalPrice       Decimal?  @db.Decimal(10, 2)
+  currency            String    @db.VarChar(3)
+  type                PriceType
+  recordedAt          DateTime  @default(now())
+
+  gameVersionRegion GameVersionRegion @relation(fields: [gameVersionRegionId], references: [id])
+
+  @@index([gameVersionRegionId, recordedAt])
+  @@map("price_history")
+}
