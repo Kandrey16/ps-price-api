@@ -14,6 +14,3 @@ export async function writeJsonFile(
 
   return filePath;
 }
-
-
-

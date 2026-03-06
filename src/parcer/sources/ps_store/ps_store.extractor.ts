@@ -12,12 +12,9 @@ export function extractPsStoreGame() {
       return el ? el.textContent.split(',').map((v) => v.trim()) : [];
     };
 
-    const getVersionList = () => {
-      const block = document.querySelector(`[data-qa*="mfeUpsell#heading"]`);
-    };
     const conceptId = (window as any).__NEXT_DATA__?.props?.pageProps?.data
       ?.conceptId;
-    console.log("concept: ", conceptId);
+    console.log('concept: ', conceptId);
 
     return {
       conceptId,

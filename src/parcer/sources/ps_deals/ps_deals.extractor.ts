@@ -83,4 +83,3 @@ export function normalizePsDeals(raw) {
     image: normalizeImageSize(game.image),
   }));
 }
-

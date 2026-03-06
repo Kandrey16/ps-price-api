@@ -78,4 +78,4 @@ export const REGION_MAP = {
 
   // Africa
   'za-store': 'en-za', // South Africa
-}
+};

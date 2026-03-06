@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { GamesService } from 'src/games/games.service';
+import { GameSaverService } from 'src/games/services/gameSaver.service';
 import { LoggerService } from 'src/logger/logger.service';
 import { ParcerService } from 'src/parcer/parcer.service';
 
@@ -8,7 +8,7 @@ export class ImportOrchestratorService {
   constructor(
     private readonly logger: LoggerService,
     private readonly parser: ParcerService,
-    private readonly games: GamesService,
+    private readonly gameSaver: GameSaverService,
   ) {}
 
   async parseAndImportPsDeals() {
@@ -16,7 +16,7 @@ export class ImportOrchestratorService {
 
     const { file, count } = await this.parser.parsePsDeals();
 
-    await this.games.importFromFile(file);
+    await this.gameSaver.importFromFile(file);
 
     this.logger.info('Import finished', { file, count });
   }

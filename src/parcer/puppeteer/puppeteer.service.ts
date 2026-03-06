@@ -29,5 +29,4 @@ export class PuppeteerService {
   async closeBrowser() {
     await this.browser.close();
   }
-  
 }

@@ -1,18 +1,22 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
-import { GamesService } from './games.service';
-import { IGame } from 'src/parcer/dto/game.interface';
+import { GameQueryService } from './services/gameQuery.service';
+import { GameSaverService } from './services/gameSaver.service';
+import { IGame } from './dto/game.interface';
 
 @Controller('games')
 export class GamesController {
-  constructor(private readonly gamesService: GamesService) {}
+  constructor(
+    private readonly gameQueryService: GameQueryService,
+    private readonly gameSaverService: GameSaverService,
+  ) {}
 
   @Post()
   save(@Body() game: IGame) {
-    return this.gamesService.saveGame(game);
+    return this.gameSaverService.saveGame(game);
   }
 
   @Get()
   findAll() {
-    return this.gamesService.findAll();
+    return this.gameQueryService.findAll();
   }
 }

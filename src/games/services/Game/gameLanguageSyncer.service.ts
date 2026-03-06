@@ -1,15 +1,22 @@
 import { Injectable } from '@nestjs/common';
+import { LANGUAGE_NAME_TO_CODE } from 'src/utils/language_to_code';
+import { GameLanguageRepository } from '../../repository/gameLanguage.repository';
 import { Prisma } from '@prisma/client';
-import { IGame } from 'src/parcer/dto/game.interface';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { LANGUAGE_NAME_TO_CODE } from 'src/utils/language_to_code'
+import { IGame } from 'src/games/dto/game.interface';
 
 @Injectable()
-export class GameSupportService {
-  constructor(private readonly prisma: PrismaService) {}
+export class GameSupportSyncerService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly languageRepo: GameLanguageRepository,
+  ) {}
 
-  async syncLanguages(tx: Prisma.TransactionClient, game: IGame, gameId: string) {
-    const languages = await tx.language.findMany();
+  async syncLanguages(game: IGame, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+    const gameId = game.id;
+
+    const languages = await this.languageRepo.findMany();
     const codeToId = new Map(languages.map((l) => [l.code, l.id]));
 
     const rows = [
@@ -17,10 +24,7 @@ export class GameSupportService {
       ...this.map(game.subtitles, 'SUBTITLE', gameId, codeToId),
     ];
 
-    await tx.gameLanguageSupport.createMany({
-      data: rows,
-      skipDuplicates: true,
-    });
+    await this.languageRepo.createMany(rows, client);
   }
 
   private map(

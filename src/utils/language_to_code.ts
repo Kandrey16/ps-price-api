@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 export const LANGUAGE_NAME_TO_CODE: Record<string, string> = {
   // ---------------- Core ----------------
   'English': 'en',
