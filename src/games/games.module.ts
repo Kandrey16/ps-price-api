@@ -14,10 +14,12 @@ import { GameImageRepository } from './repository/gameImage.repository';
 import { GameRegionRepository } from './repository/gameRegion.repository';
 import { GamePsPlusRepository } from './repository/gamePsPlus.repository';
 import { GameSaverService } from './services/gameSaver.service';
+import { GamesResolver } from './games.resolver';
 
 @Module({
   controllers: [GamesController],
   providers: [
+    GamesResolver,
     GameRepository,
     GameVersionRepository,
     GameEditionRepository,

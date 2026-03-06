@@ -2,63 +2,50 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { IGame } from '../dto/game.interface';
+import { GameFilterInput } from '../dto/game-filter.dto';
 
 @Injectable()
 export class GameRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findAll() {
-    // Получаем данные из базы с нужными select
-    return this.prisma.game.findMany({
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        rating: true,
+  async findAll(filter?: GameFilterInput) {
+    return await this.prisma.game.findMany({
+      where: {
+        ...(filter?.minRating && {
+          rating: { gte: filter.minRating },
+        }),
 
-        GameLanguageSupport: {
-          select: {
-            languageType: true,
-            language: {
-              select: {
-                code: true,
-                name: true,
+        ...(filter?.languageCode && {
+          GameLanguageSupport: {
+            some: {
+              language: {
+                code: filter.languageCode,
               },
             },
           },
-        },
+        }),
 
-        GameEdition: {
-          where: {
-            name: 'Standard',
-          },
-          take: 1,
-          select: {
-            name: true,
-            GameVersion: {
-              where: {
-                platform: 'PS5',
+        ...(filter?.platform && {
+          GameEdition: {
+            some: {
+              GameVersion: {
+                some: {
+                  platform: filter.platform,
+                },
               },
-              take: 1,
-              select: {
-                platform: true,
-                GameVersionRegion: {
-                  where: {
-                    region: { code: 'tr' }, // ← ОБЯЗАТЕЛЬНО
-                  },
-                  take: 1,
-                  select: {
-                    Price: {
-                      orderBy: {
-                        recordedAt: 'desc',
-                      },
-                      take: 1,
-                      select: {
-                        price: true,
-                        originalPrice: true,
-                        currency: true,
-                        hasDiscount: true,
-                        discountPercent: true,
+            },
+          },
+        }),
+
+        ...(filter?.region && {
+          GameEdition: {
+            some: {
+              GameVersion: {
+                some: {
+                  GameVersionRegion: {
+                    some: {
+                      region: {
+                        code: filter.region,
                       },
                     },
                   },
@@ -66,16 +53,87 @@ export class GameRepository {
               },
             },
           },
-        },
+        }),
 
-        GameImage: {
-          select: {
-            url: true,
-            type: true,
+        ...(filter?.minPrice || filter?.maxPrice
+          ? {
+              GameEdition: {
+                some: {
+                  GameVersion: {
+                    some: {
+                      GameVersionRegion: {
+                        some: {
+                          Price: {
+                            some: {
+                              ...(filter.minPrice && {
+                                price: { gte: filter.minPrice },
+                              }),
+                              ...(filter.maxPrice && {
+                                price: { lte: filter.maxPrice },
+                              }),
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            }
+          : {}),
+      },
+
+      include: {
+        GameImage: true,
+        GameEdition: {
+          include: {
+            GameVersion: {
+              include: {
+                GameVersionRegion: {
+                  include: {
+                    region: true,
+                    Price: true,
+                  },
+                },
+              },
+            },
           },
         },
+        PsPlus: true,
+        GameLanguageSupport: {
+          include: {
+            language: true,
+          },
+        },
+      },
+    });
+  }
 
-        PsPlus: true, // если нужно оставить информацию о PS Plus
+  async findOne(slug: string) {
+    return await this.prisma.game.findUnique({
+      where: { slug },
+      include: {
+        GameImage: true,
+        GameEdition: {
+          include: {
+            GameVersion: {
+              include: {
+                GameVersionRegion: {
+                  include: {
+                    region: true,
+                    Price: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        PsPlus: true,
+        GameLanguageSupport: {
+          include: {
+            language: true,
+          },
+        },
       },
     });
   }

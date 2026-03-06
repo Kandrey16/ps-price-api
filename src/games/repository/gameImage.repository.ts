@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ImageType, Prisma } from '@prisma/client';
-import { IGame } from 'src/parcer/dto/game.interface';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { IGame } from '../dto/game.interface';
 
 @Injectable()
 export class GameImageRepository {

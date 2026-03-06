@@ -8,7 +8,7 @@ import { GameRepository } from '../repository/game.repository';
 import { GameEditionRepository } from '../repository/gameEdition.repository';
 import { GameImageRepository } from '../repository/gameImage.repository';
 import { GamePsPlusRepository } from '../repository/gamePsPlus.repository';
-import { TransactionService } from 'src/prisma/unitOfWork/transaction.service';
+import { TransactionService } from 'src/prisma/transaction/transaction.service';
 import { IGame } from '../dto/game.interface';
 
 @Injectable()

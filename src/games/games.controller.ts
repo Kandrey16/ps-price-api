@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { GameQueryService } from './services/gameQuery.service';
 import { GameSaverService } from './services/gameSaver.service';
 import { IGame } from './dto/game.interface';
+import { GameFilterInput } from './dto/game-filter.dto';
 
 @Controller('games')
 export class GamesController {
@@ -16,7 +17,7 @@ export class GamesController {
   }
 
   @Get()
-  findAll() {
-    return this.gameQueryService.findAll();
+  findAll(filter?: GameFilterInput) {
+    return this.gameQueryService.findAll(filter);
   }
 }
